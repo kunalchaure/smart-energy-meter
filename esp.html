@@ -1,0 +1,58 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+
+// Replace with your Wi-Fi credentials
+const char* ssid = "your_SSID";
+const char* password = "your_PASSWORD";
+
+// Server endpoint (replace with your actual backend/API URL)
+const char* serverURL = "http://your-website.com/api/data";
+
+void setup() {
+  Serial.begin(115200);
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to Wi-Fi");
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nConnected to Wi-Fi");
+}
+
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    HTTPClient http;
+
+    // Replace these with real sensor values
+    float voltage = 230.0;
+    float current = 2.5;
+    float powerFactor = 0.95;
+    String status = (powerFactor < 1.0) ? "Lagging" : "Leading";
+
+    // Format JSON string
+    String postData = "{\"voltage\":" + String(voltage) +
+                      ",\"current\":" + String(current) +
+                      ",\"powerFactor\":" + String(powerFactor) +
+                      ",\"status\":\"" + status + "\"}";
+
+    http.begin(serverURL);
+    http.addHeader("Content-Type", "application/json");
+
+    int httpResponseCode = http.POST(postData);
+
+    if (httpResponseCode > 0) {
+      String response = http.getString();
+      Serial.println("Server response: " + response);
+    } else {
+      Serial.println("Error in sending POST: " + String(httpResponseCode));
+    }
+
+    http.end();
+  } else {
+    Serial.println("Wi-Fi disconnected");
+  }
+
+  delay(5000); // Wait 5 seconds before sending again
+}
